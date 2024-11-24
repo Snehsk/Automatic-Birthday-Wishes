@@ -1,0 +1,59 @@
+function createBirthdayEmailTrigger() {
+  var triggerTime = new Date();
+  triggerTime.setHours(9); // Set the hour to 9 AM
+  triggerTime.setMinutes(0); // Set the minutes to 0
+  triggerTime.setSeconds(0); // Set the seconds to 0
+
+  ScriptApp.newTrigger("sendBirthdayEmails")
+    .timeBased()
+    .at(triggerTime)
+    .everyDays(1) // Run every day
+    .create();
+}
+
+function sendBirthdayEmails() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet1");
+  var emailData = sheet.getRange("C2:C").getValues();
+  
+  var ccRecipients = [];
+  for (var i = 0; i < emailData.length; i++) {
+    var email = emailData[i][0];
+    if (email !== "") {
+      ccRecipients.push(email);
+    }
+  }
+
+  var sheet2 = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var today = new Date();
+  var todayDate = today.getDate();
+  var todayMonth = today.getMonth() + 1; // Months are zero-based, so adding 1 to get the correct month
+
+  var lastRow = sheet2.getLastRow();
+  var range = sheet2.getRange("A2:E" + lastRow);
+  var data = range.getValues();
+
+  for (var i = 0; i < data.length; i++) {
+    var employeeName = data[i][0];
+    var email = data[i][2];
+    var birthDate = new Date(data[i][3]);
+    var birthDateDate = birthDate.getDate();
+    var birthDateMonth = birthDate.getMonth() + 1; // Months are zero-based, so adding 1 to get the correct month
+    var imageUrl = data[i][4];
+
+    if (birthDateDate === todayDate && birthDateMonth === todayMonth) {
+      var subject = "Happy Birthday";
+      var body = "<p style='font-family: Arial, sans-serif; font-size: 24px; color: red;'>Happy Birthday, " + employeeName + "!</p>";
+
+      if (imageUrl !== "") {
+        body += '<img src="' + imageUrl + '" alt="Birthday Image" style="max-width: 100%;">';
+      }
+
+      MailApp.sendEmail({
+        to: email,
+        cc: ccRecipients.join(","),
+        subject: subject,
+        htmlBody: body
+      });
+    }
+  }
+}
